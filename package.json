@@ -15,5 +15,13 @@
     "body-parser": "^2.2.2",
     "express": "^5.2.1",
     "puppeteer": "^24.40.0"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CeeLazzy/requisition-dryrun.git"
+  },
+  "bugs": {
+    "url": "https://github.com/CeeLazzy/requisition-dryrun/issues"
+  },
+  "homepage": "https://github.com/CeeLazzy/requisition-dryrun#readme"
 }
