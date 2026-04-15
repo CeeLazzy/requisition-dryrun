@@ -1,4 +1,4 @@
-const chromium = require("chrome-aws-lambda");
+const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 const path = require("path");
@@ -418,8 +418,8 @@ app.post("/generate-pdf", async (req, res) => {
 
 const browser = await puppeteer.launch({
     args: chromium.args,
-    defaultViewport: chromium.defaultViewport,
-    executablePath: await chromium.executablePath,
+    defaultViewport: chromium.defaultViewport || null,
+    executablePath: await chromium.executablePath(),
     headless: chromium.headless,
 });
     const page = await browser.newPage();
