@@ -1,3 +1,4 @@
+
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
@@ -9,7 +10,11 @@ const bodyParser = require("body-parser");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+const pdfDir = path.join(__dirname, "saved-records");
 
+if (!fs.existsSync(pdfDir)) {
+    fs.mkdirSync(pdfDir, { recursive: true });
+}
 app.use(bodyParser.urlencoded({ extended: true }));
 
 // ✅ THIS LINE FIXES YOUR LOGO
