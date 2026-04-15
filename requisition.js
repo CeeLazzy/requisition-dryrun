@@ -415,8 +415,15 @@ Received <input name="received">
 app.post("/generate-pdf", async (req, res) => {
     try {
 
-    const browser = await puppeteer.launch({
-    args: ['--no-sandbox', '--disable-setuid-sandbox']
+  const browser = await puppeteer.launch({
+    headless: "new",
+    executablePath: puppeteer.executablePath(), // ✅ IMPORTANT
+    args: [
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu'
+    ]
 });
     const page = await browser.newPage();
 
