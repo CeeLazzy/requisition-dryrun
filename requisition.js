@@ -413,13 +413,14 @@ Received <input name="received">
 // FORM HANDLER
 // ==========================
 app.post("/generate-pdf", async (req, res) => {
+    try {
 
     const browser = await puppeteer.launch({
     args: ['--no-sandbox', '--disable-setuid-sandbox']
 });
     const page = await browser.newPage();
 
-    await page.goto(`http://localhost:${PORT}`, {
+    await page.goto(`http://127.0.0.1:${PORT}`, {
         waitUntil: "networkidle0"
     });
 
@@ -526,6 +527,11 @@ await page.evaluate(() => {
     await browser.close();
 
     res.download(filePath);
+
+    } catch (err) {
+        console.error("PDF ERROR:", err);
+        res.status(500).send("Error generating PDF");
+    }
 });
 // ==========================
 app.listen(PORT, () => {
