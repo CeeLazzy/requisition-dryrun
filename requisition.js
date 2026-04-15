@@ -1,4 +1,5 @@
-const puppeteer = require("puppeteer");
+const chromium = require("chrome-aws-lambda");
+const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 const path = require("path");
 
@@ -415,15 +416,11 @@ Received <input name="received">
 app.post("/generate-pdf", async (req, res) => {
     try {
 
-  const browser = await puppeteer.launch({
-    headless: "new",
-    executablePath: puppeteer.executablePath(), // ✅ IMPORTANT
-    args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu'
-    ]
+const browser = await puppeteer.launch({
+    args: chromium.args,
+    defaultViewport: chromium.defaultViewport,
+    executablePath: await chromium.executablePath,
+    headless: chromium.headless,
 });
     const page = await browser.newPage();
 

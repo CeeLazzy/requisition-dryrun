@@ -14,7 +14,7 @@
   "dependencies": {
     "body-parser": "^2.2.2",
     "express": "^5.2.1",
-    "puppeteer": "^24.40.0"
+    "puppeteer-core": "^24.40.0"
   },
   "repository": {
     "type": "git",
