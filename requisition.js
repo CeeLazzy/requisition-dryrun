@@ -487,33 +487,57 @@ const browser = await puppeteer.launch({
 await page.evaluate(() => {
 
     // Convert all inputs to text
-    document.querySelectorAll("input").forEach(input => {
+   await page.evaluate(() => {
 
-        if (input.type === "checkbox") {
-            if (input.checked) {
-                const span = document.createElement("span");
-                span.innerText = "✔";
-                input.parentNode.replaceChild(span, input);
-            } else {
-                input.remove();
-            }
+    // HANDLE RADIO BUTTONS (SITE SELECTION)
+    document.querySelectorAll('input[type="radio"]').forEach(radio => {
+        const label = radio.parentNode;
+        const text = label.innerText;
+
+        const span = document.createElement("div");
+
+        if (radio.checked) {
+            span.innerText = "☑ " + text;
+        } else {
+            span.innerText = "☐ " + text;
         }
 
-        else if (input.type !== "radio") {
+        label.parentNode.replaceChild(span, label);
+    });
+
+    // HANDLE CHECKBOXES
+    document.querySelectorAll('input[type="checkbox"]').forEach(input => {
+        const label = input.parentNode;
+        const text = label.innerText;
+
+        const span = document.createElement("span");
+
+        if (input.checked) {
+            span.innerText = "☑ " + text;
+        } else {
+            span.innerText = "☐ " + text;
+        }
+
+        label.parentNode.replaceChild(span, label);
+    });
+
+    // HANDLE OTHER INPUTS
+    document.querySelectorAll("input").forEach(input => {
+        if (input.type !== "checkbox" && input.type !== "radio") {
             const span = document.createElement("span");
             span.innerText = input.value || "";
             input.parentNode.replaceChild(span, input);
         }
     });
 
-    // Convert selects
+    // HANDLE SELECTS
     document.querySelectorAll("select").forEach(select => {
         const span = document.createElement("span");
         span.innerText = select.options[select.selectedIndex]?.text || "";
         select.parentNode.replaceChild(span, select);
     });
 
-    // Convert textareas
+    // HANDLE TEXTAREAS
     document.querySelectorAll("textarea").forEach(textarea => {
         const div = document.createElement("div");
         div.innerText = textarea.value || "";
