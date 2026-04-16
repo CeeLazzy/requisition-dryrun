@@ -1,11 +1,13 @@
-const sqlite3 = require("sqlite3").verbose();
-const db = new sqlite3.Database("./database.db");
-db.run(`
+const Database = require("better-sqlite3");
+const db = new Database("database.db");
+
+// create table
+db.prepare(`
 CREATE TABLE IF NOT EXISTS forms (
     req_id TEXT PRIMARY KEY,
     data TEXT
 )
-`);
+`).run();
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
@@ -447,12 +449,11 @@ app.post("/generate-pdf", async (req, res) => {
     try {
 const formData = req.body;
 
-db.run(
-    `INSERT INTO forms (req_id, data)
-     VALUES (?, ?)
-     ON CONFLICT(req_id) DO UPDATE SET data=excluded.data`,
-    [formData.req_id, JSON.stringify(formData)]
-);
+db.prepare(`
+INSERT INTO forms (req_id, data)
+VALUES (?, ?)
+ON CONFLICT(req_id) DO UPDATE SET data=excluded.data
+`).run(formData.req_id, JSON.stringify(formData));
 
 const browser = await puppeteer.launch({
     args: chromium.args,

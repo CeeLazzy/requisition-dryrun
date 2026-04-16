@@ -3,10 +3,10 @@
   "version": "1.0.0",
   "description": "",
   "main": "requisition.js",
-"scripts": {
-  "test": "echo \"Error: no test specified\" && exit 1",
-  "start": "node requisition.js",
-  "postinstall": "npm rebuild sqlite3"
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node requisition.js",
+    "postinstall": "npm rebuild sqlite3"
   },
   "keywords": [],
   "author": "",
@@ -14,10 +14,10 @@
   "type": "commonjs",
   "dependencies": {
     "@sparticuz/chromium": "^147.0.0",
+    "better-sqlite3": "^12.9.0",
     "body-parser": "^2.2.2",
     "express": "^5.2.1",
-    "puppeteer-core": "^24.40.0",
-    "sqlite3": "^6.0.1"
+    "puppeteer-core": "^24.40.0"
   },
   "repository": {
     "type": "git",
