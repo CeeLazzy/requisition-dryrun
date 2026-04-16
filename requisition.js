@@ -484,8 +484,6 @@ const browser = await puppeteer.launch({
 
     }, req.body);
 
-await page.evaluate(() => {
-
     // Convert all inputs to text
    await page.evaluate(() => {
 
