@@ -1,13 +1,18 @@
-const Database = require("better-sqlite3");
-const db = new Database("database.db");
 
-// create table
-db.prepare(`
-CREATE TABLE IF NOT EXISTS forms (
-    req_id TEXT PRIMARY KEY,
-    data TEXT
-)
-`).run();
+
+const DB_FILE = path.join(__dirname, "forms.json");
+
+function loadDB() {
+    if (!fs.existsSync(DB_FILE)) return {};
+    return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
+}
+
+function saveDB(data) {
+    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
+}
+
+
+
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
@@ -449,6 +454,10 @@ app.post("/generate-pdf", async (req, res) => {
     try {
 const formData = req.body;
 
+const db = loadDB();
+db[formData.req_id] = formData;
+saveDB(db);
+
 db.prepare(`
 INSERT INTO forms (req_id, data)
 VALUES (?, ?)
@@ -463,9 +472,9 @@ const browser = await puppeteer.launch({
 });
     const page = await browser.newPage();
 
-    await page.goto(`http://127.0.0.1:${PORT}`, {
-        waitUntil: "networkidle0"
-    });
+await page.setContent(FORM_HTML, {
+    waitUntil: "networkidle0"
+});
 
     // =========================
     // FILL FORM WITH DATA
@@ -600,25 +609,18 @@ const browser = await puppeteer.launch({
 });
 // ==========================
 app.get("/form/:id", (req, res) => {
+    const db = loadDB();
+    const data = db[req.params.id];
 
-    db.get(
-        "SELECT * FROM forms WHERE req_id = ?",
-        [req.params.id],
-        (err, row) => {
+    if (!data) return res.send("Form not found");
 
-            if (err) return res.send("DB error");
-            if (!row) return res.send("Form not found");
-
-            const data = JSON.parse(row.data);
-
-            res.send(`
-                <script>
-                    window.formData = ${JSON.stringify(data)};
-                </script>
-                ${FORM_HTML}
-            `);
-        }
-    );
+    res.send(`
+        <script>
+            window.formData = ${JSON.stringify(data)};
+        </script>
+        ${FORM_HTML}
+    `);
+});
 
 });
 app.listen(PORT, () => {
