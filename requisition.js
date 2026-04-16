@@ -477,10 +477,10 @@ await page.setContent(FORM_HTML, {
 
 
         // PID
-        for (let i = 1; i <= 12; i++) {
-            const field = document.querySelector(`input[name="p${i}"]`);
-            if (field) field.value = data[`p${i}`] || "";
-        }
+      for (let i = 1; i <= 12; i++) {
+    const field = document.querySelector('input[name="p' + i + '"]');
+    if (field) field.value = data['p' + i] || "";
+}
 
         // Gender
         const gender = document.querySelector('select[name="gender"]');
