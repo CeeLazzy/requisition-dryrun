@@ -427,21 +427,23 @@ Received <input name="received">
 <script>
 if (window.formData) {
     Object.keys(window.formData).forEach(key => {
-        const el = document.querySelector(`[name="${key}"]`);
+
+        const el = document.querySelector('[name="' + key + '"]');
         if (!el) return;
 
         if (el.type === "radio") {
-            const radio = document.querySelector(`[name="${key}"][value="${window.formData[key]}"]`);
+            const radio = document.querySelector('[name="' + key + '"][value="' + window.formData[key] + '"]');
             if (radio) radio.checked = true;
+
         } else if (el.type === "checkbox") {
             el.checked = true;
+
         } else {
             el.value = window.formData[key];
         }
     });
 }
-</script>
-</body>
+</script></body>
 </html>
 `;
 app.get("/", (req, res) => {
