@@ -458,11 +458,7 @@ const db = loadDB();
 db[formData.req_id] = formData;
 saveDB(db);
 
-db.prepare(`
-INSERT INTO forms (req_id, data)
-VALUES (?, ?)
-ON CONFLICT(req_id) DO UPDATE SET data=excluded.data
-`).run(formData.req_id, JSON.stringify(formData));
+
 
 const browser = await puppeteer.launch({
     args: chromium.args,
@@ -622,7 +618,6 @@ app.get("/form/:id", (req, res) => {
     `);
 });
 
-});
 app.listen(PORT, () => {
     console.log(`Running on http://localhost:${PORT}`);
 });
