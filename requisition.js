@@ -286,9 +286,13 @@ label {
 <input name="req_id" required>
 <label>PID</label>
 <div class="pid-grid">
-${Array.from({ length: 12 }).map((_, i) =>
-`<input name="p${i+1}" maxlength="1">`
-).join("")}
+${(() => {
+    let html = "";
+    for (let i = 1; i <= 12; i++) {
+        html += `<input name="p${i}" maxlength="1">`;
+    }
+    return html;
+})()}
 </div>
 
 <label>Gender</label>
@@ -450,9 +454,7 @@ app.post("/generate-pdf", async (req, res) => {
     try {
 const formData = req.body;
 
-const db = loadDB();
-db[formData.req_id] = formData;
-saveDB(db);
+
 
 
 
