@@ -6,16 +6,19 @@ const path = require("path");
 const express = require("express");
 const bodyParser = require("body-parser");
 
-const DB_FILE = path.join(__dirname, "forms.json");
+const sqlite3 = require("sqlite3").verbose();
 
-function loadDB() {
-    if (!fs.existsSync(DB_FILE)) return {};
-    return JSON.parse(fs.readFileSync(DB_FILE, "utf-8"));
-}
+const db = new sqlite3.Database("./forms.db");
 
-function saveDB(data) {
-    fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2));
-}
+// create table if not exists
+db.serialize(() => {
+    db.run(`
+        CREATE TABLE IF NOT EXISTS forms (
+            req_id TEXT PRIMARY KEY,
+            data TEXT
+        )
+    `);
+});
 
 
 const app = express();
@@ -454,11 +457,16 @@ app.get("/", (req, res) => {
 // ==========================
 app.post("/generate-pdf", async (req, res) => {
     try {
-const formData = req.body;
+        const formData = req.body;
 
-
-
-
+        // ✅ SAVE TO SQLITE (this is Step 4)
+        db.run(
+            `INSERT OR REPLACE INTO forms (req_id, data) VALUES (?, ?)`,
+            [formData.req_id, JSON.stringify(formData)],
+            (err) => {
+                if (err) console.error(err);
+            }
+        );
 
 const browser = await puppeteer.launch({
     args: chromium.args,
@@ -606,17 +614,24 @@ await page.setContent(FORM_HTML, {
 });
 // ==========================
 app.get("/form/:id", (req, res) => {
-    const db = loadDB();
-    const data = db[req.params.id];
+    db.get(
+        `SELECT data FROM forms WHERE req_id = ?`,
+        [req.params.id],
+        (err, row) => {
+            if (err) return res.send("DB error");
 
-    if (!data) return res.send("Form not found");
+            if (!row) return res.send("Form not found");
 
-    res.send(`
-        <script>
-            window.formData = ${JSON.stringify(data)};
-        </script>
-        ${FORM_HTML}
-    `);
+            const data = JSON.parse(row.data);
+
+            res.send(`
+                <script>
+                    window.formData = ${JSON.stringify(data)};
+                </script>
+                ${FORM_HTML}
+            `);
+        }
+    );
 });
 
 app.listen(PORT, () => {
