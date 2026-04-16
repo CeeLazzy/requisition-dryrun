@@ -3,22 +3,23 @@ const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 const path = require("path");
 
+const { Pool } = require("pg");
+
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL,
+    ssl: {
+        rejectUnauthorized: false
+    }
+});
+pool.query(`
+    CREATE TABLE IF NOT EXISTS forms (
+        req_id TEXT PRIMARY KEY,
+        data JSONB
+    )
+`);
 const express = require("express");
 const bodyParser = require("body-parser");
 
-const sqlite3 = require("sqlite3").verbose();
-
-const db = new sqlite3.Database("./forms.db");
-
-// create table if not exists
-db.serialize(() => {
-    db.run(`
-        CREATE TABLE IF NOT EXISTS forms (
-            req_id TEXT PRIMARY KEY,
-            data TEXT
-        )
-    `);
-});
 
 
 const app = express();
@@ -422,7 +423,9 @@ Received <input name="received">
 </div>
 
 </div>
-
+<br>
+<a href="/forms">View Saved Forms</a> |
+<a href="/search">Search Form</a>
 <br>
 <button type="submit">Submit</button>
 
@@ -458,16 +461,14 @@ app.get("/", (req, res) => {
 app.post("/generate-pdf", async (req, res) => {
     try {
         const formData = req.body;
-
-        // ✅ SAVE TO SQLITE (this is Step 4)
-        db.run(
-            `INSERT OR REPLACE INTO forms (req_id, data) VALUES (?, ?)`,
-            [formData.req_id, JSON.stringify(formData)],
-            (err) => {
-                if (err) console.error(err);
-            }
-        );
-
+await pool.query(
+    `INSERT INTO forms (req_id, data)
+     VALUES ($1, $2)
+     ON CONFLICT (req_id)
+     DO UPDATE SET data = $2`,
+    [formData.req_id, formData]
+);
+   
 const browser = await puppeteer.launch({
     args: chromium.args,
     defaultViewport: chromium.defaultViewport || null,
@@ -613,25 +614,101 @@ await page.setContent(FORM_HTML, {
     }
 });
 // ==========================
-app.get("/form/:id", (req, res) => {
-    db.get(
-        `SELECT data FROM forms WHERE req_id = ?`,
-        [req.params.id],
-        (err, row) => {
-            if (err) return res.send("DB error");
 
-            if (!row) return res.send("Form not found");
+app.get("/form/:id", async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT data FROM forms WHERE req_id = $1",
+            [req.params.id]
+        );
 
-            const data = JSON.parse(row.data);
-
-            res.send(`
-                <script>
-                    window.formData = ${JSON.stringify(data)};
-                </script>
-                ${FORM_HTML}
-            `);
+        if (result.rows.length === 0) {
+            return res.send("Form not found");
         }
-    );
+
+        const data = result.rows[0].data;
+
+        res.send(`
+            <script>
+                window.formData = ${JSON.stringify(data)};
+            </script>
+            ${FORM_HTML}
+        `);
+
+    } catch (err) {
+        console.error(err);
+        res.send("DB error");
+    }
+});
+app.get("/forms", async (req, res) => {
+    try {
+        const result = await pool.query(
+            "SELECT req_id FROM forms ORDER BY req_id"
+        );
+
+        const rows = result.rows;
+
+        const list = rows.map(r => {
+            return `<li>
+                <a href="/form/${r.req_id}">
+                    ${r.req_id}
+                </a>
+            </li>`;
+        }).join("");
+
+        res.send(`
+            <h2>Saved Requisitions</h2>
+            <ul>
+                ${list}
+            </ul>
+            <br>
+            <a href="/">← Back to form</a>
+        `);
+
+    } catch (err) {
+        console.error(err);
+        res.send("Error loading forms");
+    }
+});
+app.get("/search", (req, res) => {
+    res.send(`
+        <h2>Search Requisition</h2>
+
+        <form action="/search-result" method="GET">
+            <input name="req_id" placeholder="Enter Requisition Number" required>
+            <button type="submit">Search</button>
+        </form>
+
+        <br>
+        <a href="/forms">View All</a>
+    `);
+});
+app.get("/search-result", async (req, res) => {
+    try {
+        const id = req.query.req_id;
+
+        const result = await pool.query(
+            "SELECT data FROM forms WHERE req_id = $1",
+            [id]
+        );
+
+        if (result.rows.length === 0) {
+            return res.send("Form not found");
+        }
+
+        const data = result.rows[0].data;
+
+        res.send(`
+            <script>
+                window.formData = ${JSON.stringify(data)};
+            </script>
+            ${FORM_HTML}
+        `);
+
+    } catch (err) {
+        console.error(err);
+        res.send("Error searching form");
+    }
 });
 
 app.listen(PORT, () => {
