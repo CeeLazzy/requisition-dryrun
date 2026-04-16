@@ -7,7 +7,6 @@
   "test": "echo \"Error: no test specified\" && exit 1",
   "start": "node requisition.js",
   "postinstall": "npm rebuild sqlite3"
-},
   },
   "keywords": [],
   "author": "",
