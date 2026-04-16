@@ -251,7 +251,32 @@ label {
 </head>
 
 <body>
+<!-- TOP NAVIGATION BAR -->
+<div style="
+    width: 100%;
+    background: #1f4e79;
+    color: white;
+    padding: 10px 15px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: Arial;
+    font-size: 14px;
+    box-sizing: border-box;
+    margin-bottom: 15px;
+">
 
+    <div style="font-weight: bold;">
+        IC Labs Requisition System
+    </div>
+
+    <div style="display: flex; gap: 15px;">
+        <a href="/" style="color: white; text-decoration: none;">New Form</a>
+        <a href="/forms" style="color: white; text-decoration: none;">Saved Forms</a>
+        <a href="/search" style="color: white; text-decoration: none;">Search</a>
+    </div>
+
+</div>
 <form method="POST" action="/generate-pdf">
 
 <!-- HEADER -->
@@ -423,9 +448,7 @@ Received <input name="received">
 </div>
 
 </div>
-<br>
-<a href="/forms">View Saved Forms</a> |
-<a href="/search">Search Form</a>
+
 <br>
 <button type="submit">Submit</button>
 
