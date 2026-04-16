@@ -1,4 +1,11 @@
-
+const sqlite3 = require("sqlite3").verbose();
+const db = new sqlite3.Database("./database.db");
+db.run(`
+CREATE TABLE IF NOT EXISTS forms (
+    req_id TEXT PRIMARY KEY,
+    data TEXT
+)
+`);
 const chromium = require("@sparticuz/chromium");
 const puppeteer = require("puppeteer-core");
 const fs = require("fs");
@@ -23,8 +30,7 @@ app.use(express.static(path.join(__dirname, "public")));
 // ==========================
 // FULL FORM UI (SINGLE FILE)
 // ==========================
-app.get("/", (req, res) => {
-res.send(`
+const FORM_HTML = `
 <!DOCTYPE html>
 <html>
 <head>
@@ -273,7 +279,8 @@ label {
 <!-- LEFT -->
 <div class="box">
 <h3 class="heading-blue">Participant Demographic Section</h3>
-
+<label>Requisition Number</label>
+<input name="req_id" required>
 <label>PID</label>
 <div class="pid-grid">
 ${Array.from({ length: 12 }).map((_, i) =>
@@ -410,16 +417,42 @@ Received <input name="received">
 <button type="submit">Submit</button>
 
 </form>
+<script>
+if (window.formData) {
+    Object.keys(window.formData).forEach(key => {
+        const el = document.querySelector(`[name="${key}"]`);
+        if (!el) return;
 
+        if (el.type === "radio") {
+            const radio = document.querySelector(`[name="${key}"][value="${window.formData[key]}"]`);
+            if (radio) radio.checked = true;
+        } else if (el.type === "checkbox") {
+            el.checked = true;
+        } else {
+            el.value = window.formData[key];
+        }
+    });
+}
+</script>
 </body>
 </html>
-`);
+`;
+app.get("/", (req, res) => {
+    res.send(FORM_HTML);
 });
 // ==========================
 // FORM HANDLER
 // ==========================
 app.post("/generate-pdf", async (req, res) => {
     try {
+const formData = req.body;
+
+db.run(
+    `INSERT INTO forms (req_id, data)
+     VALUES (?, ?)
+     ON CONFLICT(req_id) DO UPDATE SET data=excluded.data`,
+    [formData.req_id, JSON.stringify(formData)]
+);
 
 const browser = await puppeteer.launch({
     args: chromium.args,
@@ -565,6 +598,28 @@ const browser = await puppeteer.launch({
     }
 });
 // ==========================
+app.get("/form/:id", (req, res) => {
+
+    db.get(
+        "SELECT * FROM forms WHERE req_id = ?",
+        [req.params.id],
+        (err, row) => {
+
+            if (err) return res.send("DB error");
+            if (!row) return res.send("Form not found");
+
+            const data = JSON.parse(row.data);
+
+            res.send(`
+                <script>
+                    window.formData = ${JSON.stringify(data)};
+                </script>
+                ${FORM_HTML}
+            `);
+        }
+    );
+
+});
 app.listen(PORT, () => {
     console.log(`Running on http://localhost:${PORT}`);
 });
