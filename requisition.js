@@ -318,7 +318,13 @@ label {
 ${(() => {
     let html = "";
     for (let i = 1; i <= 12; i++) {
-        html += `<input name="p${i}" maxlength="1">`;
+        html += `
+            <input 
+                name="p${i}" 
+                maxlength="1"
+                class="pid-input"
+            >
+        `;
     }
     return html;
 })()}
@@ -454,6 +460,8 @@ Received <input name="received">
 
 </form>
 <script>
+
+// LOAD SAVED FORM DATA
 if (window.formData) {
     Object.keys(window.formData).forEach(key => {
 
@@ -461,18 +469,64 @@ if (window.formData) {
         if (!el) return;
 
         if (el.type === "radio") {
-            const radio = document.querySelector('[name="' + key + '"][value="' + window.formData[key] + '"]');
+
+            const radio = document.querySelector(
+                '[name="' + key + '"][value="' + window.formData[key] + '"]'
+            );
+
             if (radio) radio.checked = true;
 
         } else if (el.type === "checkbox") {
+
             el.checked = true;
 
         } else {
+
             el.value = window.formData[key];
+
         }
     });
 }
-</script></body>
+
+// AUTO MOVE PID BOXES
+document.addEventListener("DOMContentLoaded", () => {
+
+    const pidInputs = document.querySelectorAll(".pid-input");
+
+    pidInputs.forEach((input, index) => {
+
+        // MOVE FORWARD
+        input.addEventListener("input", () => {
+
+            if (
+                input.value.length === 1 &&
+                index < pidInputs.length - 1
+            ) {
+                pidInputs[index + 1].focus();
+            }
+
+        });
+
+        // MOVE BACKWARD WITH BACKSPACE
+        input.addEventListener("keydown", (e) => {
+
+            if (
+                e.key === "Backspace" &&
+                input.value === "" &&
+                index > 0
+            ) {
+                pidInputs[index - 1].focus();
+            }
+
+        });
+
+    });
+
+});
+
+</script>
+
+</body>
 </html>
 `;
 app.get("/", (req, res) => {
