@@ -3,20 +3,7 @@ const puppeteer = require("puppeteer-core");
 const fs = require("fs");
 const path = require("path");
 
-const { Pool } = require("pg");
 
-const pool = new Pool({
-    connectionString: process.env.DATABASE_URL,
-    ssl: {
-        rejectUnauthorized: false
-    }
-});
-pool.query(`
-    CREATE TABLE IF NOT EXISTS forms (
-        req_id TEXT PRIMARY KEY,
-        data JSONB
-    )
-`);
 const express = require("express");
 const bodyParser = require("body-parser");
 
@@ -538,13 +525,7 @@ app.get("/", (req, res) => {
 app.post("/generate-pdf", async (req, res) => {
     try {
         const formData = req.body;
-await pool.query(
-    `INSERT INTO forms (req_id, data)
-     VALUES ($1, $2)
-     ON CONFLICT (req_id)
-     DO UPDATE SET data = $2`,
-    [formData.req_id, formData]
-);
+
    
 const browser = await puppeteer.launch({
     args: chromium.args,
@@ -692,61 +673,7 @@ await page.setContent(FORM_HTML, {
 });
 // ==========================
 
-app.get("/form/:id", async (req, res) => {
-    try {
-        const result = await pool.query(
-            "SELECT data FROM forms WHERE req_id = $1",
-            [req.params.id]
-        );
 
-        if (result.rows.length === 0) {
-            return res.send("Form not found");
-        }
-
-        const data = result.rows[0].data;
-
-        res.send(`
-            <script>
-                window.formData = ${JSON.stringify(data)};
-            </script>
-            ${FORM_HTML}
-        `);
-
-    } catch (err) {
-        console.error(err);
-        res.send("DB error");
-    }
-});
-app.get("/forms", async (req, res) => {
-    try {
-        const result = await pool.query(
-            "SELECT req_id FROM forms ORDER BY req_id"
-        );
-
-        const rows = result.rows;
-
-        const list = rows.map(r => {
-            return `<li>
-                <a href="/form/${r.req_id}">
-                    ${r.req_id}
-                </a>
-            </li>`;
-        }).join("");
-
-        res.send(`
-            <h2>Saved Requisitions</h2>
-            <ul>
-                ${list}
-            </ul>
-            <br>
-            <a href="/">← Back to form</a>
-        `);
-
-    } catch (err) {
-        console.error(err);
-        res.send("Error loading forms");
-    }
-});
 app.get("/search", (req, res) => {
     res.send(`
         <h2>Search Requisition</h2>
@@ -760,33 +687,7 @@ app.get("/search", (req, res) => {
         <a href="/forms">View All</a>
     `);
 });
-app.get("/search-result", async (req, res) => {
-    try {
-        const id = req.query.req_id;
 
-        const result = await pool.query(
-            "SELECT data FROM forms WHERE req_id = $1",
-            [id]
-        );
-
-        if (result.rows.length === 0) {
-            return res.send("Form not found");
-        }
-
-        const data = result.rows[0].data;
-
-        res.send(`
-            <script>
-                window.formData = ${JSON.stringify(data)};
-            </script>
-            ${FORM_HTML}
-        `);
-
-    } catch (err) {
-        console.error(err);
-        res.send("Error searching form");
-    }
-});
 
 app.listen(PORT, () => {
     console.log(`Running on http://localhost:${PORT}`);
